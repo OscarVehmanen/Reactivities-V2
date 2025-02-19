@@ -16,13 +16,12 @@ builder.Services.AddCors();
 builder.Services.AddMediatR(x => 
     x.RegisterServicesFromAssemblyContaining<GetActivityList>());
 builder.Services.AddAutoMapper(typeof (MappingProfiles).Assembly);
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 app.UseCors(x => x.AllowAnyHeader()
-    .AllowAnyHeader()
+    .AllowAnyMethod()
     .WithOrigins("http://localhost:3000", "https://localhost:3000"));
 
 app.MapControllers();
