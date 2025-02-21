@@ -1,9 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Domain;
-using MediatR;
 using Application.Activities.Queries;
 using Application.Activities.Commands;
-using Microsoft.CodeAnalysis.Differencing;
+using Application.Activities.DTOs;
 
 namespace API.Controllers;
 
@@ -22,9 +21,9 @@ public class ActivitiesController : BaseApiController
     }
 
     [HttpPost]
-    public async Task<ActionResult<string>> CreateActivity(Activity activity)
+    public async Task<ActionResult<string>> CreateActivity(CreateActivityDto activityDto)
     {
-        return await Mediator.Send(new CreateActivity.Command{Activity = activity});
+        return await Mediator.Send(new CreateActivity.Command{ActivityDto = activityDto});
     }
 
     [HttpPut]
