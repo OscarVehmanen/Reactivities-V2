@@ -1,26 +1,63 @@
-import { Box, Button, Paper, TextField, Typography } from "@mui/material";
+import { Box, Button, Paper, Typography } from "@mui/material";
 import { useActivities } from "../../../lib/hooks/useActivities";
-import { useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import { useForm } from "react-hook-form";
 import { useEffect } from "react";
-import { activitySchema, ActivitySchema } from "../../../lib/schemas/activitySchema";
+import {
+  activitySchema,
+  ActivitySchema,
+} from "../../../lib/schemas/activitySchema";
 import { zodResolver } from "@hookform/resolvers/zod";
+import TextInput from "../../../app/shared/components/TextInput";
+import SelectInput from "../../../app/shared/components/SelectInput";
+import DateTimeInput from "../../../app/shared/components/DateTimeInput";
+import LocationInput from "../../../app/shared/components/LocationInput";
+import { categoryOptions } from "./categoryOptions";
 
 export default function ActivityForm() {
-  const { register, reset, handleSubmit, formState: {errors} } = useForm<ActivitySchema>({
+  const { control, reset, handleSubmit } = useForm<ActivitySchema>({
     mode: "onTouched",
     resolver: zodResolver(activitySchema),
   });
+  const navigate = useNavigate();
   const { id } = useParams();
   const { updateActivity, createActivity, activity, isLoadingActivity } =
     useActivities(id);
 
   useEffect(() => {
-    if (activity) reset(activity);
+    if (activity)
+      reset({
+        ...activity,
+        location: {
+          city: activity.city,
+          venue: activity.venue,
+          latitude: activity.latitude,
+          longitude: activity.longitude,
+        },
+      });
   }, [activity, reset]);
 
-  const onSubmit = (data: ActivitySchema) => {
-    console.log(data);
+  const onSubmit = async (data: ActivitySchema) => {
+    const { location, ...rest } = data;
+    const flattenedData = { ...rest, ...location };
+    try {
+      if (activity) {
+        updateActivity.mutate(
+          { ...activity, ...flattenedData },
+          {
+            onSuccess: () => {
+              navigate(`/activities/${activity.id}`);
+            },
+          }
+        );
+      } else {
+        createActivity.mutate(flattenedData, {
+          onSuccess: (id) => navigate(`/activities/${id}`),
+        });
+      }
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   if (isLoadingActivity) return <Typography>Loading activity...</Typography>;
@@ -37,44 +74,27 @@ export default function ActivityForm() {
         flexDirection="column"
         gap={3}
       >
-        <TextField
-          {...register("title")}
-          label="Title"
-          defaultValue={activity?.title}
-          error={!!errors.title}
-          helperText={errors.title?.message}
-        />
-        <TextField
-          {...register("description")}
+        <TextInput label="Title" control={control} name="title" />
+        <TextInput
           label="Description"
-          defaultValue={activity?.description}
+          control={control}
+          name="description"
           multiline
           rows={3}
         />
-        <TextField
-          {...register("category")}
-          label="Category"
-          defaultValue={activity?.category}
-        />
-        <TextField
-          {...register("date")}
-          label="Date"
-          defaultValue={
-            activity?.date
-              ? new Date(activity.date).toISOString().split("T")[0]
-              : new Date().toISOString().split("T")[0]
-          }
-          type="date"
-        />
-        <TextField
-          {...register("city")}
-          label="City"
-          defaultValue={activity?.city}
-        />
-        <TextField
-          {...register("venue")}
-          label="Venue"
-          defaultValue={activity?.venue}
+        <Box display="flex" gap={3}>
+          <SelectInput
+            items={categoryOptions}
+            control={control}
+            label="Category"
+            name="category"
+          />
+          <DateTimeInput label="Date" control={control} name="date" />
+        </Box>
+        <LocationInput
+          control={control}
+          label="Enter the location"
+          name="location"
         />
         <Box display="flex" justifyContent="end" gap={3}>
           <Button color="inherit">Cancel</Button>
